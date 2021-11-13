@@ -19,9 +19,10 @@
 ## rubyスクリプトをダブルクリックで実行可能にするには
 * macOS では、シェルスクリプトファイルに .command という拡張子を付けておくと、Finder 上からファイルのアイコンをダブルクリックするだけで起動できるようになります。
 * このファイルをダブルクリックで実行できるようにするには、下記のようにします。 chmod +x しておくのを忘れずに。
-
+```
 $ chmod +x zaiko_txt2csv_for_farmy.rb
 $ mv zaiko_txt2csv_for_farmy.rb zaiko_txt2csv_for_farmy.command
+```
 この仕組みはスクリプトファイルであれば、どんな言語にでも適用できます。 例えば、先頭のシェバング部分を #!/usr/bin/env python などに変更すれば、Python スクリプトをダブルクリックで実行できます。
 
 引用：https://maku77.github.io/mac/command-file.html
