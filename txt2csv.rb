@@ -3,7 +3,7 @@ require 'csv'
 require 'date'
 
 now=DateTime.now
-filename="在庫一覧_#{now.year}#{now.month}#{now.day}_#{now.hour}_#{now.min}.csv"
+filename="在庫一覧_#{now.year}年#{now.month}月#{now.day}日_#{now.hour}時#{now.min}分.csv"
 pwd=File.expand_path( __FILE__).split("/")
 directory=pwd.slice(0..pwd.count-2).join("/")
 Dir.chdir(directory) do
