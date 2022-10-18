@@ -7,22 +7,46 @@ class Pharmy2Epark
     #pharmy_text_headerメモ
     #薬品ｺｰﾄﾞ	ﾖﾐｶﾞﾅ	種	薬品名	規格	メーカー	棚番	薬価	購入価	
     #在庫数	調整量	単位	①薬価金額	②購入金額	①－②	販売会社	厚生省ｺｰﾄﾞ	JAN
-    @execptions_hash = {
-      "53259114S10201" => "エンシュア・Ｈ(缶250mL)",
-      "53259109S10201" => "エンシュア・リキッド(缶250mL)",
-      "52190016S10202" => "カリメート経口液２０％　２５ｇ(分包10包)"
-    }
-    @execption_codes=@execptions_hash.keys
-    @exceptions=[]
+    set_exceptions #private_method
+    @order_points=get_order_points_from_csv#private_method
+    @orders=[]
     now=DateTime.now
-    @filename="在庫一覧_#{now.year}年#{now.month}月#{now.day}日_#{now.hour}時#{now.min}分.csv"
+    @zaiko_csv_filename="在庫一覧_#{now.year}年#{now.month}月#{now.day}日_#{now.hour}時#{now.min}分.csv"
+    @order_csv_filename="発注予定_#{now.year}年#{now.month}月#{now.day}日_#{now.hour}時#{now.min}分.csv"
     pwd=File.expand_path( __FILE__).split("/")
     @directory=pwd.slice(0..pwd.count-2).join("/")
     @i=0
   end
+  def create_order_csv
+    i=0
+    jans=@order_points.keys
+    header=["JAN","薬品名","棚番","在庫数","発注点","不足"]
+    Dir.chdir(@directory) do
+      CSV.open(@order_csv_filename, 'w:CP932:UTF-8') do |csv|
+        csv << header
+        File.open("在庫一覧.txt", mode = "rt:sjis:utf-8") do |file|
+          file.each_line do |line|
+            line=line.chomp.scrub('?').split("\t")
+            line.push("JAN")  if i==0 #headerに追加
+            line_17_jan=line[17].nil? ? [] : line[17].split(";")
+            jan=(jans & line_17_jan)[0]
+            if jan!=nil then
+              order_point=@order_points[jan][:order_point]
+              order=[line[17],line[3],line[6],line[9],order_point,line[9].to_i-order_point]
+              @orders.push(order)
+              i+=1
+              csv << order
+              p order
+            end
+          end
+        end
+      end
+    end
+    return true
+  end
   def create_zaiko_csv
     Dir.chdir(@directory) do
-      CSV.open(@filename, 'w:CP932:UTF-8') do |csv|
+      CSV.open(@zaiko_csv_filename, 'w:CP932:UTF-8') do |csv|
         File.open("在庫一覧.txt", mode = "rt:sjis:utf-8") do |file|
           file.each_line do |line|
             line=line.chomp.scrub('?').split("\t")
@@ -53,10 +77,40 @@ class Pharmy2Epark
     puts "無事、ファイル変換に成功しました。何かキーを入力して下さい。ウインドウを閉じます"
     STDIN.getc
   end
+  private
+  def set_exceptions
+    @execptions_hash = {
+      "53259114S10201" => "エンシュア・Ｈ(缶250mL)",
+      "53259109S10201" => "エンシュア・リキッド(缶250mL)",
+      "52190016S10202" => "カリメート経口液２０％　２５ｇ(分包10包)"
+    }
+    @execption_codes=@execptions_hash.keys
+    @exceptions=[]
+  end
+  def get_order_points_from_csv
+    order_points={}
+    pwd=File.expand_path( __FILE__).split("/")
+    directory=pwd.slice(0..pwd.count-2).join("/")
+    i=-1
+    Dir.chdir(directory) do
+      File.open("発注点設定ファイル.csv", mode = "rt:sjis:utf-8") do |file|
+        file.each_line do |line|
+          i+=1
+          next if i==0
+          name,order_point,jans=line.chomp.scrub('?').split(",")
+          jan=jans.split(";")[0]
+          order_point=order_point.to_i
+          order_points[jan]={name: name, order_point: order_point,jan: jan}
+        end
+      end
+    end
+    return order_points
+  end
 end
 
 pharmy2epark=Pharmy2Epark.new()
-pharmy2epark.create_zaiko_csv
-pharmy2epark.puts_messages_on_console
+pharmy2epark.create_order_csv
+#pharmy2epark.create_zaiko_csv
+#pharmy2epark.puts_messages_on_console
 
 
