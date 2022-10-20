@@ -47,9 +47,12 @@ class Pharmy2Epark
   def create_order_txt
     i=0
     jans=@order_points.keys
+    now=DateTime.now
+    title="＜＜＜発注予定表＞＞＞＞　作成日時：#{now.year}年#{now.month}月#{now.day}日_#{now.hour}時#{now.min}分"+ "\n"
     header="| "+["JAN".ljust(15),"stock".ljust(5),"point".ljust(5),"husoku".ljust(6),"薬品名 場所"].join(" | ") + "\n"
     Dir.chdir(@directory) do
       File.open(@order_txt_filename, mode = "w") do |output_file|
+        output_file.write(title)
         output_file.write(header)
         File.open("在庫一覧.txt", mode = "rt:sjis:utf-8") do |file|
           file.each_line do |line|
@@ -103,6 +106,17 @@ class Pharmy2Epark
     puts "無事、ファイル変換に成功しました。何かキーを入力して下さい。ウインドウを閉じます"
     STDIN.getc
   end
+  def open_order_txt
+    begin
+      Dir.chdir(@directory) do
+        exec("発注予定.txt")
+      end
+    rescue
+      Dir.chdir(@directory) do
+        exec("open 発注予定.txt")
+      end
+    end
+  end
   private
   def set_exceptions
     @execptions_hash = {
@@ -132,6 +146,7 @@ class Pharmy2Epark
     end
     return order_points
   end
+  
 end
 class String
   def mb_ljust(width, padding='')
@@ -148,5 +163,8 @@ pharmy2epark.create_order_csv
 pharmy2epark.create_order_txt
 pharmy2epark.create_zaiko_csv
 pharmy2epark.puts_messages_on_console
+pharmy2epark.open_order_txt
+
+
 
 
