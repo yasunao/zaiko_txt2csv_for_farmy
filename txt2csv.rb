@@ -111,7 +111,7 @@ class Pharmy2Epark
   def open_order_txt
     begin
       Dir.chdir(@directory) do
-        exec("発注予定.txt")
+        exec("notepad 発注予定.txt")
       end
     rescue
       Dir.chdir(@directory) do
@@ -150,18 +150,9 @@ class Pharmy2Epark
   end
   
 end
-class String
-  def mb_ljust(width, padding='')
-    #widthは全角サイズのワイド
-    rails RuntimeError.new("padding_char must be 1 bytesize.") if padding.bytesize==2
-    self_size = each_char.map{|c| c.bytesize == 1 ? 1 : 2}.sum
-    padding_size = [0, width*2 - self_size].max
-    self + padding * padding_size
-  end
-end
 
 pharmy2epark=Pharmy2Epark.new()
-pharmy2epark.create_order_csv
+#pharmy2epark.create_order_csv
 pharmy2epark.create_order_txt
 pharmy2epark.create_zaiko_csv
 pharmy2epark.puts_messages_on_console
