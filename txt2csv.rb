@@ -12,7 +12,7 @@ class Pharmy2Epark
     @orders=[]
     now=DateTime.now
     @zaiko_csv_filename="在庫一覧_#{now.year}年#{now.month}月#{now.day}日_#{now.hour}時#{now.min}分.csv"
-    @order_csv_filename="発注予定_#{now.year}年#{now.month}月#{now.day}日_#{now.hour}時#{now.min}分.csv"
+    @order_txt_filename="発注予定.txt"
     pwd=File.expand_path( __FILE__).split("/")
     @directory=pwd.slice(0..pwd.count-2).join("/")
     @i=0
@@ -22,7 +22,7 @@ class Pharmy2Epark
     jans=@order_points.keys
     header=["JAN","薬品名","棚番","在庫数","発注点","不足"]
     Dir.chdir(@directory) do
-      CSV.open(@order_csv_filename, 'w:CP932:UTF-8') do |csv|
+      CSV.open(@order_txt_filename, 'w:CP932:UTF-8') do |csv|
         csv << header
         File.open("在庫一覧.txt", mode = "rt:sjis:utf-8") do |file|
           file.each_line do |line|
@@ -37,6 +37,32 @@ class Pharmy2Epark
               i+=1
               csv << order
               p order
+            end
+          end
+        end
+      end
+    end
+    return true
+  end
+  def create_order_txt
+    i=0
+    jans=@order_points.keys
+    header="| "+["JAN".ljust(15),"stock".ljust(5),"point".ljust(5),"husoku".ljust(6),"薬品名 場所"].join(" | ") + "\n"
+    Dir.chdir(@directory) do
+      File.open(@order_txt_filename, mode = "w") do |output_file|
+        output_file.write(header)
+        File.open("在庫一覧.txt", mode = "rt:sjis:utf-8") do |file|
+          file.each_line do |line|
+            line=line.chomp.scrub('?').split("\t")
+            line_17_jan=line[17].nil? ? [] : line[17].split(";")
+            jan=(jans & line_17_jan)[0]
+            if jan!=nil then
+              order_point=@order_points[jan][:order_point]
+              #order=[line[17],line[3],line[6],line[9],order_point,line[9].to_i-order_point]
+              order="| #{line[17].ljust(15)} | #{line[9].ljust(5)} | #{order_point.to_s.ljust(5)} | #{(line[9].to_i-order_point).to_s.ljust(6)} |#{line[3]}、#{line[6]}"
+              @orders.push(order)
+              i+=1
+              output_file.write("#{order.to_s}")  # ファイルに書き込む
             end
           end
         end
@@ -107,10 +133,20 @@ class Pharmy2Epark
     return order_points
   end
 end
+class String
+  def mb_ljust(width, padding='')
+    #widthは全角サイズのワイド
+    rails RuntimeError.new("padding_char must be 1 bytesize.") if padding.bytesize==2
+    self_size = each_char.map{|c| c.bytesize == 1 ? 1 : 2}.sum
+    padding_size = [0, width*2 - self_size].max
+    self + padding * padding_size
+  end
+end
 
 pharmy2epark=Pharmy2Epark.new()
 pharmy2epark.create_order_csv
-#pharmy2epark.create_zaiko_csv
-#pharmy2epark.puts_messages_on_console
+pharmy2epark.create_order_txt
+pharmy2epark.create_zaiko_csv
+pharmy2epark.puts_messages_on_console
 
 
