@@ -62,12 +62,14 @@ class Pharmy2Epark
             if jan!=nil then
               order_point=@order_points[jan][:order_point]
               #order=[line[17],line[3],line[6],line[9],order_point,line[9].to_i-order_point]
+              next if (line[9].to_i-order_point)>0
               order="| #{line[17].ljust(15)} | #{line[9].ljust(5)} | #{order_point.to_s.ljust(5)} | #{(line[9].to_i-order_point).to_s.ljust(6)} |#{line[3]}、#{line[6]}"
               @orders.push(order)
               i+=1
               output_file.write("#{order.to_s}")  # ファイルに書き込む
             end
           end
+          output_file.write("発注予定品目はありません") if i==0
         end
       end
     end
