@@ -9,7 +9,7 @@ class Pharmy2Epark
     #在庫数	調整量	単位	①薬価金額	②購入金額	①－②	販売会社	厚生省ｺｰﾄﾞ	JAN
     set_exceptions #private_method
     @order_points=get_order_points_from_csv#private_method
-    @orders=[]
+    @orders={}
     now=DateTime.now
     @zaiko_csv_filename="在庫一覧_#{now.year}年#{now.month}月#{now.day}日_#{now.hour}時#{now.min}分.csv"
     @order_txt_filename="発注予定.txt"
@@ -47,13 +47,8 @@ class Pharmy2Epark
   def create_order_txt
     i=0
     jans=@order_points.keys
-    now=DateTime.now
-    title="＜＜＜発注予定表＞＞＞＞　作成日時：#{now.year}年#{now.month}月#{now.day}日_#{now.hour}時#{now.min}分"+ "\n"
-    header="| "+["JAN".ljust(15),"stock".ljust(5),"point".ljust(5),"husoku".ljust(6),"薬品名 場所"].join(" | ") + "\n"
     Dir.chdir(@directory) do
       File.open(@order_txt_filename, mode = "w") do |output_file|
-        output_file.write(title)
-        output_file.write(header)
         File.open("在庫一覧.txt", mode = "rt:sjis:utf-8") do |file|
           file.each_line do |line|
             line=line.chomp.scrub('?').split("\t")
@@ -61,15 +56,29 @@ class Pharmy2Epark
             jan=(jans & line_17_jan)[0]
             if jan!=nil then
               order_point=@order_points[jan][:order_point]
-              #order=[line[17],line[3],line[6],line[9],order_point,line[9].to_i-order_point]
-              next if (line[9].to_i-order_point)>0
-              order="| #{line[17].ljust(15)} | #{line[9].ljust(5)} | #{order_point.to_s.ljust(5)} | #{(line[9].to_i-order_point).to_s.ljust(6)} |#{line[3]}、#{line[6]}"
-              @orders.push(order)
+              to_be=((order_point.to_f-line[9].to_f)/@order_points[jan][:package].to_f).ceil.to_i
+              next if (to_be)<=0
+              order_package=@order_points[jan][:package].to_s+@order_points[jan][:unit].to_s+"*"+to_be.to_s
+              order="| #{line[17].ljust(15)} | #{line[9].ljust(5)} | #{order_point.to_s.ljust(5)} | #{(order_package).to_s.ljust(6)} |#{line[3]}、#{line[6]}"+ "\n"
+              @orders[@order_points[jan][:tonya]]=[] if @orders[@order_points[jan][:tonya]].nil?
+              @orders[@order_points[jan][:tonya]].push(order)
               i+=1
-              output_file.write("#{order.to_s}")  # ファイルに書き込む
             end
           end
+          # ファイルに書き込む
+          now=DateTime.now
+          title="＜＜＜発注予定表＞＞＞＞　作成日時：#{now.year}年#{now.month}月#{now.day}日_#{now.hour}時#{now.min}分"+ "\n"
+          header="| "+["JAN".ljust(15),"stock".ljust(5),"point".ljust(5),"発注".ljust(6),"薬品名 場所"].join(" | ") + "\n"
           output_file.write("発注予定品目はありません") if i==0
+          @orders.each do |tonya,orders|
+            output_file.write(title)
+            output_file.write(tonya+ "御中\n")
+            output_file.write(header)
+            orders.each do |order|
+              output_file.write("#{order.to_s}")
+            end
+            output_file.write("---------------------------------------------------------------------------"+"\n")
+          end
         end
       end
     end
@@ -77,7 +86,7 @@ class Pharmy2Epark
   end
   def create_zaiko_csv
     Dir.chdir(@directory) do
-      CSV.open(@zaiko_csv_filename, 'w:CP932:UTF-8') do |csv|
+      CSV.open(@zaiko_csv_filename, 'w"CP932""UTF"-8') do |csv|
         File.open("在庫一覧.txt", mode = "rt:sjis:utf-8") do |file|
           file.each_line do |line|
             line=line.chomp.scrub('?').split("\t")
@@ -135,14 +144,15 @@ class Pharmy2Epark
     directory=pwd.slice(0..pwd.count-2).join("/")
     i=-1
     Dir.chdir(directory) do
+      #薬品名,問屋,発注点,発注包装,JAN;）
       File.open("発注点設定ファイル.csv", mode = "rt:sjis:utf-8") do |file|
         file.each_line do |line|
           i+=1
           next if i==0
-          name,order_point,jans=line.chomp.scrub('?').split(",")
+          name,tonya,order_point,unit,package,jans=line.chomp.scrub('?').split(",")
           jan=jans.split(";")[0]
           order_point=order_point.to_i
-          order_points[jan]={name: name, order_point: order_point,jan: jan}
+          order_points[jan]={name: name,tonya: tonya, order_point: order_point,unit: unit,package: package,jan: jan}
         end
       end
     end
