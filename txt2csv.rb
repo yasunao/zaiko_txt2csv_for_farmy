@@ -17,33 +17,6 @@ class Pharmy2Epark
     @directory=pwd.slice(0..pwd.count-2).join("/")
     @i=0
   end
-  def create_order_csv
-    i=0
-    jans=@order_points.keys
-    header=["JAN","薬品名","棚番","在庫数","発注点","不足"]
-    Dir.chdir(@directory) do
-      CSV.open(@order_txt_filename, 'w:CP932:UTF-8') do |csv|
-        csv << header
-        File.open("在庫一覧.txt", mode = "rt:sjis:utf-8") do |file|
-          file.each_line do |line|
-            line=line.chomp.scrub('?').split("\t")
-            line.push("JAN")  if i==0 #headerに追加
-            line_17_jan=line[17].nil? ? [] : line[17].split(";")
-            jan=(jans & line_17_jan)[0]
-            if jan!=nil then
-              order_point=@order_points[jan][:order_point]
-              order=[line[17],line[3],line[6],line[9],order_point,line[9].to_i-order_point]
-              @orders.push(order)
-              i+=1
-              csv << order
-              p order
-            end
-          end
-        end
-      end
-    end
-    return true
-  end
   def create_order_txt
     i=0
     jans=@order_points.keys
@@ -86,7 +59,7 @@ class Pharmy2Epark
   end
   def create_zaiko_csv
     Dir.chdir(@directory) do
-      CSV.open(@zaiko_csv_filename, 'w"CP932""UTF"-8') do |csv|
+      CSV.open(@zaiko_csv_filename, 'w:CP932:UTF-8') do |csv|
         File.open("在庫一覧.txt", mode = "rt:sjis:utf-8") do |file|
           file.each_line do |line|
             line=line.chomp.scrub('?').split("\t")
@@ -133,7 +106,8 @@ class Pharmy2Epark
     @execptions_hash = {
       "53259114S10201" => "エンシュア・Ｈ(缶250mL)",
       "53259109S10201" => "エンシュア・リキッド(缶250mL)",
-      "52190016S10202" => "カリメート経口液２０％　２５ｇ(分包10包)"
+      "52190016S10202" => "カリメート経口液２０％　２５ｇ(分包10包)",
+      "61259700Q10201" => "エクロックゲル5％(本20g)"
     }
     @execption_codes=@execptions_hash.keys
     @exceptions=[]
@@ -162,7 +136,6 @@ class Pharmy2Epark
 end
 
 pharmy2epark=Pharmy2Epark.new()
-#pharmy2epark.create_order_csv
 pharmy2epark.create_order_txt
 pharmy2epark.create_zaiko_csv
 pharmy2epark.puts_messages_on_console
