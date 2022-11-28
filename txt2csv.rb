@@ -63,11 +63,15 @@ class Pharmy2Epark
         File.open("在庫一覧.txt", mode = "rt:sjis:utf-8") do |file|
           file.each_line do |line|
             line=line.chomp.scrub('?').split("\t")
-            line.push("JAN")  if @i==0 #headerに追加
-            #csv << line if line[9]!="0"
+            line.push("JAN")  if @i==0  #headerに追加
             if @execption_codes.include?(line[0]) then
               @exceptions.push(@execptions_hash[line[0]])
             else
+              if @i!=0 then#複数のJANを一つに絞る
+                jans=line.pop
+                jan=jans.split(";").first  if jans!=nil
+              end
+              line.push(jan)
               csv << line
               @i+=1
               p "#{(@i)}#{line}"
