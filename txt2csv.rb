@@ -61,18 +61,28 @@ class Pharmy2Epark
     Dir.chdir(@directory) do
       CSV.open(@zaiko_csv_filename, 'w:CP932:UTF-8') do |csv|
         File.open("在庫一覧.txt", mode = "rt:sjis:utf-8") do |file|
+          header=[]
           file.each_line do |line|
             line=line.chomp.scrub('?').split("\t")
-            line.push("JAN")  if @i==0  #headerに追加
+            if @i==0 then
+              line.push("JAN")    #headerに追加
+              header=line
+            end
             if @execption_codes.include?(line[0]) then
               @exceptions.push(@execptions_hash[line[0]])
             else
               if @i!=0 then#複数のJANを一つに絞る
+                next if line.count==0
+                line.push("") if line.count==17
                 jans=line.pop
-                jan=jans.split(";").first  if jans!=nil
+                jan=jans.split(";").first
+                jan="" if jans==""
+                line.push(jan)
               end
-              line.push(jan)
-              csv << line
+              next if line.count==1
+              hash = Hash[*[header,line].transpose.flatten]
+              @exceptions.push(hash["薬品名"]) if hash["JAN"]==""
+              csv << ["JAN","在庫数","薬品名","棚番"].map{|key|hash[key]} if hash["JAN"]!=""
               @i+=1
               p "#{(@i)}#{line}"
             end
