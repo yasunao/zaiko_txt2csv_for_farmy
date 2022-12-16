@@ -74,8 +74,8 @@ class Pharmy2Epark
               if @i!=0 then#複数のJANを一つに絞る
                 next if line.count==0
                 line.push("") if line.count==17
-                jans=line.pop
-                jan=jans.split(";").first
+                jans=line.pop.split(";").select{|jan|!jan.empty?}
+                jan=jans.first
                 jan="" if jans==""
                 line.push(jan)
               end
