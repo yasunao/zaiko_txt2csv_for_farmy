@@ -118,7 +118,6 @@ class Pharmy2Epark
   private
   def set_exceptions
     @execptions_hash = {
-      "52190016S10202" => "カリメート経口液２０％　２５ｇ(分包10包)",
       "61259700Q10201" => "エクロックゲル5％(本20g)"
     }
     @execption_codes=@execptions_hash.keys
